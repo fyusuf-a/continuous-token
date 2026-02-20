@@ -82,34 +82,38 @@ describe("Program initialization", () => {
   });
 
   it("Program fails to initialize if discount > fee", async () => {
-    let baseFeeBps = 100;
-    let discountBps = 150;
+    let tests = [
+      { baseFeeBps: 100, discountBps: 150 },
+      { baseFeeBps: 100, discountBps: 100 },
+    ];
 
-    await assert.rejects(async () => {
-      await program.methods.initialize(
-        seed,
-        firstPrice,
-        reserveRatioBps,
-        baseFeeBps,
-        discountBps,
-        rtTokenName,
-        rtTokenSymbol,
-        rtTokenUri,
-      ).accountsStrict({
-        initializer,
-        config: configPda,
-        mintCt: ctMintPda,
-        mintRt,
-        vaultRt,
-        tokenProgramRt: anchor.utils.token.TOKEN_PROGRAM_ID,
-        tokenProgramCt: anchor.utils.token.TOKEN_PROGRAM_ID,
-        associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      }).rpc();
-    },
-      () => true,
-      "Config should fail"
-    );
+    for (let test of tests) {
+      await assert.rejects(async () => {
+        await program.methods.initialize(
+          seed,
+          firstPrice,
+          reserveRatioBps,
+          test.baseFeeBps,
+          test.discountBps,
+          rtTokenName,
+          rtTokenSymbol,
+          rtTokenUri,
+        ).accountsStrict({
+          initializer,
+          config: configPda,
+          mintCt: ctMintPda,
+          mintRt,
+          vaultRt,
+          tokenProgramRt: anchor.utils.token.TOKEN_PROGRAM_ID,
+          tokenProgramCt: anchor.utils.token.TOKEN_PROGRAM_ID,
+          associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        }).rpc();
+      },
+        () => true,
+        "Config should fail"
+      );
+    };
   });
 
   it("Program successfully initializes", async () => {

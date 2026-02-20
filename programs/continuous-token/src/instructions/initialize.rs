@@ -62,7 +62,7 @@ impl<'info> Initialize<'info> {
         discount_bps: u16,
         bumps: &InitializeBumps,
     ) -> Result<()> {
-        require!(discount_bps < base_fee_bps, ContinuousTokenError::BadConfig);
+        require!(discount_bps <= base_fee_bps, ContinuousTokenError::BadConfig);
 
         self.config.set_inner(Config {
             seed,

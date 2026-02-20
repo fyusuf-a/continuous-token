@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { ContinuousToken } from "../target/types/continuous_token";
-import { createMint, getAssociatedTokenAddressSync, getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
+import { createMint, getAssociatedTokenAddressSync, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_2022_PROGRAM_ID, getTokenMetadata } from "@solana/spl-token";
 import assert from "node:assert/strict";
 import { expect } from "chai";
 
@@ -52,6 +52,9 @@ describe("Program initialization", () => {
   const reserveRatioBps = 9_000; // 90%
   const baseFeeBps = 100; // 1%
   const discountBps = 50; // .5%
+  const rtTokenName = "RT Token";
+  const rtTokenSymbol = "RT";
+  const rtTokenUri = "https://example.com/rt-token-metadata.json";
 
   const [configPda, configBump] = anchor.web3.PublicKey.findProgramAddressSync(
     [Buffer.from("config"), seed.toArrayLike(Buffer, "le", 8)],
@@ -89,6 +92,9 @@ describe("Program initialization", () => {
         reserveRatioBps,
         baseFeeBps,
         discountBps,
+        rtTokenName,
+        rtTokenSymbol,
+        rtTokenUri,
       ).accountsStrict({
         initializer,
         config: configPda,
@@ -113,6 +119,9 @@ describe("Program initialization", () => {
       reserveRatioBps,
       baseFeeBps,
       discountBps,
+      rtTokenName,
+      rtTokenSymbol,
+      rtTokenUri,
     ).accountsStrict({
       initializer,
       config: configPda,
@@ -120,7 +129,7 @@ describe("Program initialization", () => {
       mintRt,
       vaultRt,
       tokenProgramRt: anchor.utils.token.TOKEN_PROGRAM_ID,
-      tokenProgramCt: anchor.utils.token.TOKEN_PROGRAM_ID,
+      tokenProgramCt: TOKEN_2022_PROGRAM_ID,
       associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
       systemProgram: anchor.web3.SystemProgram.programId,
     }).rpc();
@@ -143,4 +152,17 @@ describe("Program initialization", () => {
     const vaultBalance = await provider.connection.getTokenAccountBalance(vaultRt);
     expect(vaultBalance.value.uiAmount).to.equal(0);
   });
+
+  it("After initialization, continuous token has the correct metadata", async () => {
+    const mintAccount = await provider.connection.getAccountInfo(ctMintPda);
+    expect(mintAccount).to.not.be.null;
+    expect(mintAccount?.owner.toString()).to.equal(TOKEN_2022_PROGRAM_ID.toString());
+    const metadata = await getTokenMetadata(provider.connection, ctMintPda);
+    expect(metadata.updateAuthority.toString()).to.equal(configPda.toString());
+    expect(metadata.name).to.equal(rtTokenName);
+    expect(metadata.symbol).to.equal(rtTokenSymbol);
+    expect(metadata.uri).to.equal(rtTokenUri);
+  });
+
+
 });

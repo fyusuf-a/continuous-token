@@ -55,16 +55,18 @@ impl<'info> Initialize<'info> {
         &mut self,
         seed: u64,
         first_price: u128,
-        reserve_ratio: u128,
-        base_fee_bps: u128,
-        discount_bps: u128,
-        bumps: InitializeBumps,
+        reserve_ratio_bps: u16,
+        base_fee_bps: u16,
+        discount_bps: u16,
+        bumps: &InitializeBumps,
     ) -> Result<()> {
         self.config.set_inner(Config {
+            seed,
             first_price,
-            reserve_ratio,
+            reserve_ratio_bps,
             base_fee_bps,
             discount_bps,
+            bump: bumps.config,
         });
         Ok(())
     }

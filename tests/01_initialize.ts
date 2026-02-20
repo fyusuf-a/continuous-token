@@ -2,6 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { ContinuousToken } from "../target/types/continuous_token";
 import { createMint, getAssociatedTokenAddressSync, getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
+import assert from "node:assert/strict";
 import { expect } from "chai";
 
 const RT_DECIMALS = 6;
@@ -75,6 +76,34 @@ describe("Program initialization", () => {
     await airdropRT(provider, mintRt, initializer);
 
     vaultRt = getAssociatedTokenAddressSync(mintRt, configPda, true);
+  });
+
+  it("Program fails to initialize if discount > fee", async () => {
+    let baseFeeBps = 100;
+    let discountBps = 150;
+
+    await assert.rejects(async () => {
+      await program.methods.initialize(
+        seed,
+        firstPrice,
+        reserveRatioBps,
+        baseFeeBps,
+        discountBps,
+      ).accountsStrict({
+        initializer,
+        config: configPda,
+        mintCt: ctMintPda,
+        mintRt,
+        vaultRt,
+        tokenProgramRt: anchor.utils.token.TOKEN_PROGRAM_ID,
+        tokenProgramCt: anchor.utils.token.TOKEN_PROGRAM_ID,
+        associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      }).rpc();
+    },
+      () => true,
+      "Config should fail"
+    );
   });
 
   it("Program successfully initializes", async () => {

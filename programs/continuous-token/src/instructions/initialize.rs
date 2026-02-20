@@ -3,7 +3,7 @@ use anchor_spl::{
     associated_token::AssociatedToken, token_interface::{Mint, TokenAccount, TokenInterface}
 };
 
-use crate::state::Config;
+use crate::{ContinuousTokenError, state::Config};
 
 #[derive(Accounts)]
 #[instruction(seed: u64)]
@@ -60,6 +60,7 @@ impl<'info> Initialize<'info> {
         discount_bps: u16,
         bumps: &InitializeBumps,
     ) -> Result<()> {
+        require!(discount_bps < base_fee_bps, ContinuousTokenError::BadConfig);
         self.config.set_inner(Config {
             seed,
             first_price,

@@ -2,9 +2,11 @@ use anchor_lang::prelude::*;
 
 mod state;
 mod instructions;
+mod error;
 
 pub use state::*;
 pub use instructions::*;
+pub use error::*;
 
 declare_id!("9KwgDXHGibr8yaGGMLPSvE6y7Yxfbkd8Rv4K7AkmCTgn");
 

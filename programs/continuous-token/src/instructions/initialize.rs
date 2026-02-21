@@ -1,9 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    associated_token::AssociatedToken, token_interface::{Mint, TokenAccount, TokenInterface}
+    associated_token::AssociatedToken,
+    token_2022::Token2022,
+    token_interface::{
+        token_metadata_initialize, Mint, TokenAccount, TokenInterface, TokenMetadataInitialize,
+    },
 };
 
-use crate::{ContinuousTokenError, state::Config};
+use crate::{state::Config, update_account_lamports_to_minimum_balance, ContinuousTokenError};
 
 #[derive(Accounts)]
 #[instruction(seed: u64)]
@@ -30,8 +34,9 @@ pub struct Initialize<'info> {
         bump,
         mint::decimals = 8,
         mint::authority = config,
-        // mint::freeze_authority?
-        mint::token_program = token_program_ct
+        mint::token_program = token_program_ct,
+        extensions::metadata_pointer::authority = config,
+        extensions::metadata_pointer::metadata_address = mint_ct,
     )]
     pub mint_ct: InterfaceAccount<'info, Mint>,
 
@@ -63,7 +68,8 @@ pub struct Initialize<'info> {
     pub vault_ct_locked: InterfaceAccount<'info, TokenAccount>,
 
     pub token_program_rt: Interface<'info, TokenInterface>,
-    pub token_program_ct: Interface<'info, TokenInterface>,
+
+    pub token_program_ct: Program<'info, Token2022>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
@@ -78,7 +84,10 @@ impl<'info> Initialize<'info> {
         discount_bps: u16,
         bumps: &InitializeBumps,
     ) -> Result<()> {
-        require!(discount_bps < base_fee_bps, ContinuousTokenError::BadConfig);
+        require!(
+            discount_bps <= base_fee_bps,
+            ContinuousTokenError::BadConfig
+        );
         require!(reserve_ratio_bps < 10_000, ContinuousTokenError::BadConfig);
         require!(discount_bps < 10_000, ContinuousTokenError::BadConfig);
         require!(base_fee_bps < 10_000, ContinuousTokenError::BadConfig);
@@ -92,8 +101,44 @@ impl<'info> Initialize<'info> {
             bump: bumps.config,
         });
 
+        Ok(())
+    }
 
+    pub fn initialize_token_metadata(
+        &self,
+        seed: u64,
+        name: String,
+        symbol: String,
+        uri: String,
+        bumps: &InitializeBumps,
+    ) -> Result<()> {
+        let signer_seeds: &[&[&[u8]]] = &[&[b"config", &seed.to_le_bytes(), &[bumps.config]]];
 
+        let cpi_accounts = TokenMetadataInitialize {
+            program_id: self.token_program_ct.to_account_info(),
+            mint: self.mint_ct.to_account_info(),
+            metadata: self.mint_ct.to_account_info(),
+            mint_authority: self.config.to_account_info(),
+            update_authority: self.config.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(
+            self.token_program_ct.to_account_info(),
+            cpi_accounts,
+            signer_seeds,
+        );
+
+        token_metadata_initialize(cpi_ctx, name, symbol, uri)?;
+
+        update_account_lamports_to_minimum_balance(
+            self.mint_ct.to_account_info(),
+            self.initializer.to_account_info(),
+            self.system_program.to_account_info(),
+        )?;
+        update_account_lamports_to_minimum_balance(
+            self.config.to_account_info(),
+            self.initializer.to_account_info(),
+            self.system_program.to_account_info(),
+        )?;
         Ok(())
     }
 }

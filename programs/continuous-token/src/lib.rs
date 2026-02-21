@@ -3,10 +3,12 @@ use anchor_lang::prelude::*;
 mod error;
 mod instructions;
 mod state;
+mod utils;
 
 pub use error::*;
 pub use instructions::*;
 pub use state::*;
+pub use utils::*;
 
 declare_id!("9KwgDXHGibr8yaGGMLPSvE6y7Yxfbkd8Rv4K7AkmCTgn");
 
@@ -21,6 +23,9 @@ pub mod continuous_token {
         reserve_ratio_bps: u16,
         base_fee_bps: u16,
         discount_bps: u16,
+        name: String,
+        symbol: String,
+        uri: String,
     ) -> Result<()> {
         ctx.accounts.init(
             seed,
@@ -29,7 +34,9 @@ pub mod continuous_token {
             base_fee_bps,
             discount_bps,
             &ctx.bumps,
-        )
+        )?;
+        ctx.accounts
+            .initialize_token_metadata(seed, name, symbol, uri, &ctx.bumps)
     }
 
     pub fn buy(ctx: Context<Buy>, amount: u64) -> Result<()> {

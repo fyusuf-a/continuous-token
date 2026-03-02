@@ -28,7 +28,7 @@ pub struct Sell<'info> {
     #[account(
         mut,
         seeds = [b"ct", config.seed.to_le_bytes().as_ref()],
-        bump,
+        bump = config.mint_ct_bump,
         mint::authority = config,
         mint::token_program = token_program_ct,
         constraint = mint_ct.key() == config.mint_ct @ ContinuousTokenError::IncorrectMint
@@ -61,7 +61,7 @@ pub struct Sell<'info> {
 
     #[account(
         seeds = [b"fee_vault", config.seed.to_le_bytes().as_ref()],
-        bump,
+        bump = config.fee_vault_authority_bump
     )]
     /// CHECK: PDA authority only
     pub fee_vault_authority: UncheckedAccount<'info>,

@@ -150,7 +150,7 @@ impl<'info> Buy<'info> {
             self.config
                 .base_fee_bps
                 .checked_sub(self.config.discount_bps)
-                .unwrap_or(self.config.base_fee_bps)
+                .ok_or(ContinuousTokenError::Underflow)?
         } else {
             self.config.base_fee_bps
         };

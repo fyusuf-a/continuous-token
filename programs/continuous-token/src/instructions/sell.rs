@@ -46,14 +46,6 @@ pub struct Sell<'info> {
     #[account(
         mut,
         associated_token::mint = mint_ct,
-        associated_token::authority = config,
-        associated_token::token_program = token_program_ct,
-    )]
-    pub vault_ct_unlocked: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    #[account(
-        mut,
-        associated_token::mint = mint_ct,
         associated_token::authority = fee_vault_authority,
         associated_token::token_program = token_program_ct,
     )]

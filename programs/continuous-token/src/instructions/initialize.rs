@@ -108,6 +108,8 @@ impl<'info> Initialize<'info> {
             mint_rt: self.mint_rt.key(),
             mint_ct: self.mint_ct.key(),
             bump: bumps.config,
+            mint_ct_bump: bumps.mint_ct,
+            fee_vault_authority_bump: bumps.fee_vault_authority,
         });
 
         Ok(())

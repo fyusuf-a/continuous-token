@@ -15,7 +15,7 @@ pub struct Sell<'info> {
 
     #[account(
         seeds = [b"config", config.seed.to_le_bytes().as_ref()],
-        bump,
+        bump = config.bump,
     )]
     pub config: Account<'info, Config>,
 
@@ -28,7 +28,7 @@ pub struct Sell<'info> {
     #[account(
         mut,
         seeds = [b"ct", config.seed.to_le_bytes().as_ref()],
-        bump,
+        bump = config.mint_ct_bump,
         mint::authority = config,
         mint::token_program = token_program_ct,
         constraint = mint_ct.key() == config.mint_ct @ ContinuousTokenError::IncorrectMint
@@ -53,7 +53,7 @@ pub struct Sell<'info> {
 
     #[account(
         seeds = [b"fee_vault", config.seed.to_le_bytes().as_ref()],
-        bump,
+        bump = config.fee_vault_authority_bump
     )]
     /// CHECK: PDA authority only
     pub fee_vault_authority: UncheckedAccount<'info>,
@@ -73,7 +73,7 @@ pub struct Sell<'info> {
         associated_token::authority = seller,
         associated_token::token_program = token_program_rt,
     )]
-    pub seller_rt_ata: InterfaceAccount<'info, TokenAccount>,
+    pub seller_rt_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program_rt: Interface<'info, TokenInterface>,
     pub token_program_ct: Interface<'info, TokenInterface>,
@@ -94,10 +94,10 @@ impl<'info> Sell<'info> {
 
         let fee = amount_u128
             .checked_mul(self.config.base_fee_bps as u128)
-            .ok_or(ContinuousTokenError::Overflow)?
+            .unwrap_or(0)
             .checked_div(10_000)
-            .ok_or(ContinuousTokenError::Underflow)?;
-        let fee_u64: u64 = fee.try_into().map_err(|_| ContinuousTokenError::Overflow)?;
+            .unwrap_or(0);
+        let fee_u64: u64 = fee.try_into().unwrap_or(0);
 
         let net_amount = amount_u128
             .checked_sub(fee)
@@ -130,7 +130,9 @@ impl<'info> Sell<'info> {
 
             let ctx = CpiContext::new(cpi_program, cpi_accounts);
 
-            transfer_checked(ctx, fee_u64, self.mint_ct.decimals)?;
+            if fee_u64 > 0 {
+                transfer_checked(ctx, fee_u64, self.mint_ct.decimals)?;
+            }
         }
 
         {

@@ -102,10 +102,10 @@ impl<'info> Sell<'info> {
 
         let fee = amount_u128
             .checked_mul(self.config.base_fee_bps as u128)
-            .ok_or(ContinuousTokenError::Overflow)?
+            .unwrap_or(0)
             .checked_div(10_000)
-            .ok_or(ContinuousTokenError::Underflow)?;
-        let fee_u64: u64 = fee.try_into().map_err(|_| ContinuousTokenError::Overflow)?;
+            .unwrap_or(0);
+        let fee_u64: u64 = fee.try_into().unwrap_or(0);
 
         let net_amount = amount_u128
             .checked_sub(fee)
@@ -138,7 +138,9 @@ impl<'info> Sell<'info> {
 
             let ctx = CpiContext::new(cpi_program, cpi_accounts);
 
-            transfer_checked(ctx, fee_u64, self.mint_ct.decimals)?;
+            if fee_u64 > 0 {
+                transfer_checked(ctx, fee_u64, self.mint_ct.decimals)?;
+            }
         }
 
         {

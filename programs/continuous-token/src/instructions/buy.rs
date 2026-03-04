@@ -87,7 +87,6 @@ pub struct Buy<'info> {
     #[account()]
     pub referrer: Option<SystemAccount<'info>>,
     #[account(
-        // NOTE: Do you want to make the referrer already have made a purchase?
         init_if_needed,
         payer = buyer,
         associated_token::mint = mint_ct,
@@ -158,10 +157,10 @@ impl<'info> Buy<'info> {
 
         let fee = total_ct
             .checked_mul(final_fee_bps as u128)
-            .ok_or(ContinuousTokenError::Overflow)?
+            .unwrap_or(0)
             .checked_div(10_000)
-            .ok_or(ContinuousTokenError::Overflow)?;
-        let fee_u64: u64 = fee.try_into().map_err(|_| ContinuousTokenError::Overflow)?;
+            .unwrap_or(0);
+        let fee_u64: u64 = fee.try_into().unwrap_or(0);
 
         let user_ct = total_ct
             .checked_sub(fee)
@@ -249,7 +248,9 @@ impl<'info> Buy<'info> {
 
                 let ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
 
-                transfer_checked(ctx, fee_u64, self.mint_ct.decimals)?;
+                if fee_u64 > 0 {
+                    transfer_checked(ctx, fee_u64, self.mint_ct.decimals)?;
+                }
             }
         }
 

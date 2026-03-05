@@ -30,7 +30,7 @@ import {
   snapshotAmountBeforeAfter,
 } from "./helpers";
 
-describe("Buy", () => {
+describe("Buy @local", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 

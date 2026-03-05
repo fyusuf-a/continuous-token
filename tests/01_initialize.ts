@@ -12,7 +12,7 @@ import { expect } from "chai";
 import type { ContinuousToken } from "../target/types/continuous_token";
 import { airdrop, airdropRT, RT_DECIMALS, randomBN } from "./helpers";
 
-describe("Program initialization", () => {
+describe("Program initialization @local", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 

@@ -140,9 +140,6 @@ impl<'info> Buy<'info> {
             self.vault_rt.amount,
             amount_u128,
         )?;
-        let total_ct_u64: u64 = total_ct
-            .try_into()
-            .map_err(|_| ContinuousTokenError::Overflow)?;
 
         let has_referrer = self.referrer_ct_ata.is_some();
 
@@ -189,26 +186,10 @@ impl<'info> Buy<'info> {
         }
 
         {
-            // Mint CT to temp
-            let cpi_program = self.token_program_ct.to_account_info();
-
-            let cpi_accounts = MintToChecked {
-                mint: self.mint_ct.to_account_info(),
-                to: self.vault_ct_unlocked.to_account_info(),
-                authority: self.config.to_account_info(),
-            };
-
-            let ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
-
-            mint_to_checked(ctx, total_ct_u64, self.mint_ct.decimals)?;
-        }
-
-        {
             // Transfer CT to User
             let cpi_program = self.token_program_ct.to_account_info();
 
-            let cpi_accounts = TransferChecked {
-                from: self.vault_ct_unlocked.to_account_info(),
+            let cpi_accounts = MintToChecked {
                 mint: self.mint_ct.to_account_info(),
                 to: self.buyer_ct_ata.to_account_info(),
                 authority: self.config.to_account_info(),
@@ -216,42 +197,26 @@ impl<'info> Buy<'info> {
 
             let ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
 
-            transfer_checked(ctx, user_ct_u64, self.mint_ct.decimals)?;
+            mint_to_checked(ctx, user_ct_u64, self.mint_ct.decimals)?;
         }
 
-        match &self.referrer_ct_ata {
-            Some(referrer_ct_ata) => {
-                // Transfer CT to Referrer
-                let cpi_program = self.token_program_ct.to_account_info();
+        let fee_recipient = match &self.referrer_ct_ata {
+            Some(referrer_ct_ata) => referrer_ct_ata,
+            None => &self.vault_ct_locked,
+        };
 
-                let cpi_accounts = TransferChecked {
-                    from: self.vault_ct_unlocked.to_account_info(),
-                    mint: self.mint_ct.to_account_info(),
-                    to: referrer_ct_ata.to_account_info(),
-                    authority: self.config.to_account_info(),
-                };
+        let cpi_program = self.token_program_ct.to_account_info();
 
-                let ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
+        let cpi_accounts = MintToChecked {
+            mint: self.mint_ct.to_account_info(),
+            to: fee_recipient.to_account_info(),
+            authority: self.config.to_account_info(),
+        };
 
-                transfer_checked(ctx, fee_u64, self.mint_ct.decimals)?;
-            }
-            None => {
-                // Transfer CT to Locked Vault
-                let cpi_program = self.token_program_ct.to_account_info();
+        let ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
 
-                let cpi_accounts = TransferChecked {
-                    from: self.vault_ct_unlocked.to_account_info(),
-                    mint: self.mint_ct.to_account_info(),
-                    to: self.vault_ct_locked.to_account_info(),
-                    authority: self.config.to_account_info(),
-                };
-
-                let ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
-
-                if fee_u64 > 0 {
-                    transfer_checked(ctx, fee_u64, self.mint_ct.decimals)?;
-                }
-            }
+        if fee_u64 > 0 {
+            mint_to_checked(ctx, fee_u64, self.mint_ct.decimals)?;
         }
 
         Ok(())

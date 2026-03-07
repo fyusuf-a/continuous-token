@@ -88,6 +88,7 @@ impl<'info> Initialize<'info> {
         reserve_ratio_bps: u16,
         base_fee_bps: u16,
         discount_bps: u16,
+        min_balance_for_referral_bps: u16,
         bumps: &InitializeBumps,
     ) -> Result<()> {
         require!(
@@ -97,6 +98,7 @@ impl<'info> Initialize<'info> {
         require!(reserve_ratio_bps < 10_000, ContinuousTokenError::BadConfig);
         require!(discount_bps < 10_000, ContinuousTokenError::BadConfig);
         require!(base_fee_bps < 10_000, ContinuousTokenError::BadConfig);
+        require!(min_balance_for_referral_bps < 10_000, ContinuousTokenError::BadConfig);
         require!(first_price != 0, ContinuousTokenError::BadConfig);
 
         self.config.set_inner(Config {
@@ -105,6 +107,7 @@ impl<'info> Initialize<'info> {
             reserve_ratio_bps,
             base_fee_bps,
             discount_bps,
+            min_balance_for_referral_bps,
             mint_rt: self.mint_rt.key(),
             mint_ct: self.mint_ct.key(),
             bump: bumps.config,

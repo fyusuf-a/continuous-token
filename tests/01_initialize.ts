@@ -28,6 +28,7 @@ describe("Program initialization @local", () => {
   const reserveRatioBps = 9_000; // 90%
   const baseFeeBps = 100; // 1%
   const discountBps = 50; // .5%
+  const minBalanceForReferralBps = 500; // 5%
   const rtTokenName = "RT Token";
   const rtTokenSymbol = "RT";
   const rtTokenUri = "https://example.com/rt-token-metadata.json";
@@ -78,8 +79,8 @@ describe("Program initialization @local", () => {
 
   it("Program fails to initialize if discount > fee", async () => {
     const tests = [
-      { baseFeeBps: 100, discountBps: 150 },
-      { baseFeeBps: 100, discountBps: 100 },
+      { baseFeeBps: 100, discountBps: 150, minBalanceForReferralBps: 500 },
+      { baseFeeBps: 100, discountBps: 100, minBalanceForReferralBps: 500 },
     ];
 
     for (const test of tests) {
@@ -92,6 +93,7 @@ describe("Program initialization @local", () => {
               reserveRatioBps,
               test.baseFeeBps,
               test.discountBps,
+              test.minBalanceForReferralBps,
               rtTokenName,
               rtTokenSymbol,
               rtTokenUri,
@@ -126,6 +128,7 @@ describe("Program initialization @local", () => {
         reserveRatioBps,
         baseFeeBps,
         discountBps,
+        minBalanceForReferralBps,
         rtTokenName,
         rtTokenSymbol,
         rtTokenUri,

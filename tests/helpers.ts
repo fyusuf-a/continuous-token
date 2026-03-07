@@ -45,6 +45,7 @@ export type BondingCurveParams = {
   reserveRatioBps: number;
   baseFeeBps: number;
   discountBps: number;
+  minBalanceForReferralBps: number;
 };
 
 export type TokenMetadata = {
@@ -137,6 +138,7 @@ export const DEFAULT_INIT_CONFIG: InitializeConfig = {
     reserveRatioBps: 9_000, // 90%
     baseFeeBps: 100, // 1%
     discountBps: 50, // 0.5%
+    minBalanceForReferralBps: 0, // no minimum balance for referral
   },
   meta: {
     name: "RT Token",
@@ -432,6 +434,7 @@ export async function initializeProgram(
       curve.reserveRatioBps,
       curve.baseFeeBps,
       curve.discountBps,
+      curve.minBalanceForReferralBps,
       meta.name,
       meta.symbol,
       meta.uri,

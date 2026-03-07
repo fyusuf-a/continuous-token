@@ -23,6 +23,7 @@ pub mod continuous_token {
         reserve_ratio_bps: u16,
         base_fee_bps: u16,
         discount_bps: u16,
+        min_balance_for_referral_bps: u16,
         name: String,
         symbol: String,
         uri: String,
@@ -33,6 +34,7 @@ pub mod continuous_token {
             reserve_ratio_bps,
             base_fee_bps,
             discount_bps,
+            min_balance_for_referral_bps,
             &ctx.bumps,
         )?;
         ctx.accounts

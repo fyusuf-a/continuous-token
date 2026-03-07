@@ -8,6 +8,7 @@ pub struct Config {
     pub reserve_ratio_bps: u16,
     pub base_fee_bps: u16,
     pub discount_bps: u16,
+    pub min_balance_for_referral_bps: u16,
     pub mint_rt: Pubkey,
     pub mint_ct: Pubkey,
     pub bump: u8,
